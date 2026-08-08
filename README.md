@@ -5,7 +5,7 @@ Two synchronized interfaces over one patient session:
 - **Patient form** (`/patient/[sessionId]`) — public, no login. Every keystroke is broadcast live.
 - **Staff console** (`/staff`) — auth-gated. Watches sessions and field edits as they happen.
 
-**Live demo:** _(fill in the Vercel URL after deploying)_
+**Live demo:** https://patient-flow-smoky.vercel.app
 
 ---
 
@@ -105,14 +105,60 @@ immediately, while the database only stores the debounced/committed state.
 
 ### Hand-off and session lifecycle
 
-- **QR hand-off** — the landing page and the staff dashboard can mint a session and show a QR
-  code plus a copyable link, so the patient fills the form on their own phone while staff watch
-  from the console.
-- **Staff can close a session** — abandoned sessions no longer sit in the list forever;
-  `closed` was previously only reachable from the patient tab. Closing broadcasts
-  `session_closed` on the session channel, and the patient tab locks the form behind a
-  disabled `<fieldset>` with an explanatory alert. The patient side cannot read `sessions`
-  (RLS restricts SELECT to staff), so a broadcast is the only live path for that signal.
+#### New session — QR hand-off
+
+**What it is:** a `New session` button on the staff dashboard (and `Open on Another Device` on
+the landing page) that opens a dialog containing a QR code and a copyable link. Both entry
+points render the same component, `components/common/SessionLinkDialog.tsx`.
+
+**What it does, step by step:**
+
+1. Staff click `New session`. A session id is generated in the browser with
+   `crypto.randomUUID()` — no server round-trip, so the dialog appears instantly.
+2. The dialog shows that id as a QR code pointing at `/patient/<id>`, with the same URL
+   underneath in a read-only field and a copy button.
+3. The patient scans the code with their phone camera, or receives the link by message. The
+   intake form opens on their device — no app, no account, no code to type in.
+4. The moment they start typing, the staff console already watching that session shows the
+   fields filling in, which field is focused, and when they submit.
+
+**How it helps in practice**
+
+- **The console stays with staff.** Without a hand-off, the only way to get the form to a
+  patient is to pass over the intake tablet — which takes the live view away from the person
+  who is supposed to be watching it. The QR sends the form out and keeps the dashboard in place,
+  which is the whole point of having two synchronized screens.
+- **Nobody transcribes a UUID.** A session id is 36 characters. Reading it aloud or typing it
+  from a sticky note is where a real desk would lose time and make mistakes; scanning is one
+  gesture with a zero error rate.
+- **Several patients can fill in at once.** Each press mints a separate session, so a queue of
+  people can complete the form on their own phones in parallel while staff watch the list update
+  in real time — instead of forming a line behind one shared device.
+- **Hygiene and privacy.** The patient enters their own personal details on their own screen and
+  never handles a shared clinic device.
+- **It makes the feature demonstrable.** One person with a laptop and a phone can see both sides
+  of the realtime sync in under ten seconds — which is exactly how a reviewer will try it.
+
+Design details worth noting:
+
+- **The id is minted before the row exists.** The dialog only hands out a link; the `sessions`
+  row is created by the patient tab on first load (`upsertSession`). A QR that nobody scans
+  leaves no orphan row behind.
+- **The link is the entire access story for the patient side.** There are no patient accounts,
+  and a v4 UUID is not guessable, so possession of the link is what grants access — the same
+  model as an unlisted document link.
+- **Copy degrades gracefully.** `navigator.clipboard` fails on insecure origins and when
+  permission is denied, so the URL also sits in a selectable input next to the button.
+
+#### Close session
+
+Abandoned sessions no longer sit in the list forever — `closed` used to be reachable only from
+the patient tab. Closing broadcasts `session_closed` on the session channel, and the patient tab
+locks the form behind a disabled `<fieldset>` with an explanatory alert.
+
+The patient side cannot read `sessions` (RLS restricts SELECT to staff), so a broadcast is the
+only live path for that signal — the same channel that carries field updates doubles as the
+control channel.
 
 ---
 
