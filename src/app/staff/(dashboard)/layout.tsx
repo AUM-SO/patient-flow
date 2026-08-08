@@ -28,9 +28,9 @@ export default async function StaffDashboardLayout({ children }: { children: Rea
 
   return (
     <SidebarProvider>
-      <StaffSidebar userEmail={userEmail} />
+      <StaffSidebar userEmail={userEmail} className="[view-transition-name:staff-sidebar]" />
       <SidebarInset>
-        <header className="sticky top-0 flex shrink-0 items-center gap-2 border-b bg-background p-4">
+        <header className="sticky top-0 flex shrink-0 items-center gap-2 border-b bg-background p-4 [view-transition-name:staff-header]">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-vertical:h-4 data-vertical:self-auto" />
           <StaffBreadcrumb />

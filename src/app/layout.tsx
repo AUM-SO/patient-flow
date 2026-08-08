@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -26,7 +27,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          {/* Route navigations are React Transitions, so this wrapper animates
+              every page change through the browser's View Transitions API.
+              The animation itself lives in globals.css. */}
+          <ViewTransition>{children}</ViewTransition>
+        </TooltipProvider>
         <Toaster />
       </body>
     </html>

@@ -174,3 +174,53 @@
     @apply font-sans;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Route transitions
+
+   React's <ViewTransition> (wrapped around the root layout's children) drives
+   the browser View Transitions API on every navigation. The default browser
+   crossfade is a hard cut between two full-page snapshots; these rules soften
+   it into a short fade plus a few pixels of travel, which reads as "the same
+   app moved" rather than "a new document loaded".
+
+   Browsers without the API ignore all of this and navigate instantly.
+--------------------------------------------------------------------------- */
+@keyframes route-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes route-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+::view-transition-old(root) {
+  animation: route-fade-out 150ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+  /* Starts after the outgoing snapshot has cleared, so the two never
+     cross-dissolve into a muddy double image. */
+  animation: route-fade-in 150ms cubic-bezier(0, 0, 0.2, 1) 60ms both;
+}
+
+/* The staff sidebar and sticky header are shared chrome that survives every
+   /staff/* navigation. Naming them keeps each one a single persistent
+   snapshot, so only the page body animates and the eye stays anchored. */
+::view-transition-group(staff-sidebar),
+::view-transition-group(staff-header) {
+  animation-duration: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

@@ -56,6 +56,25 @@ user under Authentication → Users — that email/password is the staff login.
 `supabase/reset-and-recreate.sql` and `supabase/final-setup.sql` are destructive re-runs of the
 same schema (they `drop table … cascade` first). Use them only to wipe a dev project.
 
+### Test staff account
+
+Use this account to reach the staff console on the live demo, or create the same one under
+Authentication → Users in your own Supabase project.
+
+| Field | Value |
+| --- | --- |
+| Email | `<FILL IN>` |
+| Password | `<FILL IN>` |
+
+Sign in at [`/staff/login`](http://localhost:3000/staff/login). There is no public sign-up —
+staff accounts are seeded by hand, so this is the only way into `/staff/*`.
+
+The patient side needs no account at all: open the landing page, start a session, and the form
+link works for anyone who has it.
+
+> This account exists only for reviewing the assignment and holds no real data. Rotate or delete
+> it before the project is reused for anything else.
+
 ---
 
 ## How the realtime sync works
